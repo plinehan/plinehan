@@ -49,9 +49,9 @@ public class Wakeum extends MapActivity
                                         ViewGroup.LayoutParams.WRAP_CONTENT,
                                         ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        Drawable rawMarker = getResources().getDrawable(R.drawable.pin);
+        Drawable marker = getResources().getDrawable(R.drawable.pin);
 
-        this.alarmsOverlay = new AlarmsOverlay(this, rawMarker);
+        this.alarmsOverlay = new AlarmsOverlay(this, marker);
         this.mapView.getOverlays().add(this.alarmsOverlay);
         this.mapView.postInvalidate();
     }
