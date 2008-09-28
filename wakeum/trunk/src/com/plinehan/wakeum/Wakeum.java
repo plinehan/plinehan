@@ -49,7 +49,7 @@ public class Wakeum extends MapActivity
                                         ViewGroup.LayoutParams.WRAP_CONTENT,
                                         ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        Drawable rawMarker = getResources().getDrawable(android.R.drawable.star_big_on);
+        Drawable rawMarker = getResources().getDrawable(R.drawable.pin);
 
         this.alarmsOverlay = new AlarmsOverlay(this, rawMarker);
         this.mapView.getOverlays().add(this.alarmsOverlay);

@@ -46,7 +46,7 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
     {
         super.draw(canvas, mapView, shadow);
 
-        boundCenter(this.marker);
+        boundCenterBottom(this.marker);
     }
 
     @Override
