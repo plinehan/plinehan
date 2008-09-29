@@ -28,7 +28,7 @@ public class Alarm
         this.longitudeE6 = longitudeE6;
     }
 
-    public static List<Alarm> getAll(DbHelper dbHelper)
+    public static Alarm[] getAll(DbHelper dbHelper)
     {
         List<Alarm> alarms = new ArrayList<Alarm>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -58,14 +58,20 @@ public class Alarm
         cursor.close();
         db.close();
 
-        return alarms;
+        return alarms.toArray(new Alarm[0]);
     }
 
-    public static void deleteAll(DbHelper dbHelper)
+    public static Alarm[] deleteAll(DbHelper dbHelper)
     {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
         database.delete("alarms", null, null);
         database.close();
+        Alarm[] alarms = getAll(dbHelper);
+        if (alarms.length != 0)
+        {
+            throw new IllegalArgumentException();
+        }
+        return alarms;
     }
 
     public OverlayItem toOverlayItem()
@@ -76,7 +82,7 @@ public class Alarm
                         this.name);
     }
 
-    public static void create(DbHelper dbHelper, GeoPoint center)
+    public static Alarm[] create(DbHelper dbHelper, String pName, GeoPoint center)
     {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
         database
@@ -84,7 +90,7 @@ public class Alarm
                                         "INSERT INTO alarms (name, latitudeE6, longitudeE6) VALUES (?,?,?)",
                                         new Object[]
                                         {
-                                                        "nameIs:" + center,
+                                                        pName,
                                                         Long
                                                                         .valueOf(center
                                                                                         .getLatitudeE6()),
@@ -92,5 +98,6 @@ public class Alarm
                                                                         .valueOf(center
                                                                                         .getLongitudeE6()) });
         database.close();
+        return getAll(dbHelper);
     }
 }

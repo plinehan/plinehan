@@ -5,14 +5,12 @@
  */
 package com.plinehan.wakeum;
 
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
@@ -49,9 +47,7 @@ public class Wakeum extends MapActivity
                                         ViewGroup.LayoutParams.WRAP_CONTENT,
                                         ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        Drawable marker = getResources().getDrawable(R.drawable.pin);
-
-        this.alarmsOverlay = new AlarmsOverlay(this, marker);
+        this.alarmsOverlay = new AlarmsOverlay(this);
         this.mapView.getOverlays().add(this.alarmsOverlay);
         this.mapView.postInvalidate();
     }
@@ -163,11 +159,6 @@ public class Wakeum extends MapActivity
                 GeoPoint mapCenter = this.mapView.getMapCenter();
                 this.alarmsOverlay.create(mapCenter);
                 this.mapView.postInvalidate();
-                this.alarmsOverlay.refresh();
-                Toast.makeText(
-                                this,
-                                "Here you go: " + mapCenter,
-                                Toast.LENGTH_SHORT).show();
                 return true;
         }
 
