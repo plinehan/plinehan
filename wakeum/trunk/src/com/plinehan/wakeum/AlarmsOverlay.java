@@ -85,7 +85,6 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
                     //Point point = mapView.getProjection().toPixels(getItem(i).getPoint(), null);
                     //float distance = (float)Math.sqrt(square(event.getX() - point.x) + square(event.getY() - point.y)); 
                     this.dragDrawable = boundCenterBottom(this.wakeum.getResources().getDrawable(R.drawable.pin));
-                    Log.e(Wakeum.TAG, "made a drawable!");
                     break;
                     /*
                     if (distance < 20)
