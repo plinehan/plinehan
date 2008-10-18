@@ -5,6 +5,7 @@
  */
 package com.plinehan.wakeum;
 
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 
@@ -20,6 +21,7 @@ class AlarmOnGestureListener extends GestureDetector.SimpleOnGestureListener
     @Override
     public void onLongPress(MotionEvent e)
     {
-        this.alarmsOverlay.setDragAlarm(true);
+        Log.w(Wakeum.TAG, "onLongPress");
+        this.alarmsOverlay.setLongPress(e);
     }
 }

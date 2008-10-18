@@ -69,12 +69,68 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
         
         populate();
     }
+    
+    private Drawable dragDrawable = null;
 
     @Override
     public boolean onTouchEvent(MotionEvent event, MapView mapView)
     {
-        return this.gestureDetector.onTouchEvent(event);
+        boolean handled = this.gestureDetector.onTouchEvent(event);
+        if (this.longPress != null)
+        {
+            if (this.dragDrawable == null)
+            {
+                for (int i = 0; i < this.alarms.length; i++)
+                {
+                    //Point point = mapView.getProjection().toPixels(getItem(i).getPoint(), null);
+                    //float distance = (float)Math.sqrt(square(event.getX() - point.x) + square(event.getY() - point.y)); 
+                    this.dragDrawable = boundCenterBottom(this.wakeum.getResources().getDrawable(R.drawable.pin));
+                    Log.e(Wakeum.TAG, "made a drawable!");
+                    break;
+                    /*
+                    if (distance < 20)
+                    {
+                        Log.e(Wakeum.TAG, "here we go!");
+                        {
+                            dragDrawable = boundCenterBottom(wakeum.getResources().getDrawable(R.drawable.pin));                            
+                        }
+                    }
+                    else
+                    {
+                        Log.e(Wakeum.TAG, "nope");
+                    }8
+                    */
+                }
+            }
+            if (event.getAction() == MotionEvent.ACTION_MOVE)
+            {
+                //Log.e(Wakeum.TAG, "moving!");
+                //Log.e(Wakeum.TAG, "" + event.getHistorySize());
+                //dragDrawable.getBounds().offset((int)(event.getX() - event.getHistoricalX(2)), (int)(event.getY() - event.getHistoricalY(2)));
+                Rect bnds = this.dragDrawable.copyBounds();
+                bnds.offsetTo(((int)event.getX()) - this.dragDrawable.getIntrinsicWidth() / 2, ((int)event.getY()) - this.dragDrawable.getIntrinsicHeight());
+                this.dragDrawable.setBounds(bnds);
+                //Log.e(Wakeum.TAG, (int)event.getX() + " - " +  (int)event.getY());
+                //Log.e(Wakeum.TAG, "" + dragDrawable.getBounds());
+                mapView.postInvalidate();
+                handled = true;
+            }
+            handled = true;
+        }
+        if (event.getAction() == MotionEvent.ACTION_UP)
+        {
+            this.longPress = null;
+            this.dragDrawable = null;
+        }
+        return handled;
     }
+    
+    /*
+    private float square(float real)
+    {
+        return real * real;
+    }
+    */
     
     @Override
     protected OverlayItem createItem(int i)
@@ -112,7 +168,12 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
             
             this.upppMarker.setBounds(arrowMarkers);
             this.upppMarker.draw(canvas);
-        }   
+        }
+        if (this.dragDrawable != null)
+        {
+            this.dragDrawable.draw(canvas);
+        }
+        
         super.draw(canvas, mapView, shadow);
     }
 
@@ -194,10 +255,10 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
     /**
      * In drag alarm mode, the focused alarm is dragged.
      */
-    private boolean dragAlarm = false;
+    private MotionEvent longPress = null;
     
-    public void setDragAlarm(boolean dragAlarm)
+    public void setLongPress(MotionEvent longPress)
     {
-        this.dragAlarm = dragAlarm;        
+        this.longPress = longPress;        
     }
 }

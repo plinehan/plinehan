@@ -6,6 +6,7 @@
 package com.plinehan.wakeum;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
@@ -15,11 +16,12 @@ import android.widget.LinearLayout;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapView;
+import com.google.android.maps.MyLocationOverlay;
 
 public class Wakeum extends MapActivity
 {
     public static final String TAG = "Wakeum";
-
+    
     private static final int MENU_ITEM_CLEAR_MAP = 10000;
     private static final int MENU_ITEM_MAP_MODE = 10001;
     private static final int MENU_ITEM_MAP_MODE_SUB_MAP = 10002;
@@ -30,6 +32,7 @@ public class Wakeum extends MapActivity
 
     private MapView mapView;
     private AlarmsOverlay alarmsOverlay;
+    private MyLocationOverlay myLocationOverlay;
 
     /** Called when the activity is first created. */
     @Override
@@ -48,10 +51,36 @@ public class Wakeum extends MapActivity
                                         ViewGroup.LayoutParams.WRAP_CONTENT));
 
         this.alarmsOverlay = new AlarmsOverlay(this);
+        this.myLocationOverlay = new MyLocationOverlay(this, this.mapView);
+        final MapView mapView = this.mapView;
+        final MyLocationOverlay myLocationOverlay = this.myLocationOverlay;
+        this.myLocationOverlay.runOnFirstFix(new Runnable() {
+            public void run()
+            {
+                Log.e(TAG, "GOT FIRST FIX");
+                mapView.getController().animateTo(myLocationOverlay.getMyLocation());
+            }
+        });
+
         this.mapView.getOverlays().add(this.alarmsOverlay);
+        this.mapView.getOverlays().add(this.myLocationOverlay);
         this.mapView.postInvalidate();
     }
 
+    @Override
+    protected void onPause()
+    {
+        this.myLocationOverlay.disableMyLocation();
+        super.onPause();
+    }
+    
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        Log.e(TAG, "onResume:enableMyLocation: " + this.myLocationOverlay.enableMyLocation());
+    }
+    
     @Override
     protected boolean isRouteDisplayed()
     {
