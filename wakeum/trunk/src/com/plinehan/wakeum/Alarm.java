@@ -14,7 +14,7 @@ import android.database.sqlite.SQLiteDatabase;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.OverlayItem;
 
-public class Alarm
+class Alarm
 {
     //private Long id;
     private final String name;
