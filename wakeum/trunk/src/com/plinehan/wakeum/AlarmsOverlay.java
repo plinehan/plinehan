@@ -10,8 +10,8 @@ import java.util.Collections;
 import java.util.List;
 
 import junit.framework.Assert;
-
 import android.graphics.Canvas;
+import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -21,30 +21,35 @@ import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.ItemizedOverlay;
 import com.google.android.maps.MapView;
-import com.google.android.maps.OverlayItem;
 import com.google.android.maps.Projection;
 
-class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
+class AlarmsOverlay extends ItemizedOverlay<AlarmItem>
 {
+	/**
+	 * Amount of room to shift dragging images for finger height.
+	 */
+	private static final int FINGER_Y_OFFSET = -20;
+	
     private final Wakeum wakeum;
     private final DbHelper dbHelper;
     private final Paint fillPaint;
     private final Paint strokePaint;
-    private final Drawable upppMarker;
-    private final Drawable downMarker;
+    private final Paint dottedStrokePaint;
     private Alarm[] alarms;
-    private final GestureDetector gestureDetector;
+    
+    private float miniCircleRadius = 3;
+    private float currCircleRadius = 50;
+    private final int strokeWidth = 5;
 
     public AlarmsOverlay(Wakeum wakeum)
     {
-        super(boundCenterBottom(wakeum.getResources().getDrawable(R.drawable.pin)));
+        super(boundCenterBottom(wakeum.getResources().getDrawable(R.drawable.pin_red)));
         //super.setDrawFocusedItem(false);
         
         this.wakeum = wakeum;
@@ -56,83 +61,113 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
         this.strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         this.strokePaint.setARGB(255, 255, 119, 107);
         this.strokePaint.setStyle(Style.STROKE);
-        this.strokePaint.setStrokeWidth(5);
+        this.strokePaint.setStrokeWidth(strokeWidth);
 
-        this.upppMarker = wakeum.getResources().getDrawable(android.R.drawable.arrow_up_float);
-        this.downMarker = wakeum.getResources().getDrawable(android.R.drawable.arrow_down_float);
-        Assert.assertEquals(this.upppMarker.getIntrinsicWidth(), this.downMarker.getIntrinsicWidth());
-        Assert.assertEquals(this.upppMarker.getIntrinsicHeight(), this.downMarker.getIntrinsicHeight());
-        
+        this.dottedStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        this.dottedStrokePaint.setARGB(255, 148, 154, 170);
+        this.dottedStrokePaint.setStyle(Style.STROKE);
+        this.dottedStrokePaint.setStrokeWidth(strokeWidth);
+        this.dottedStrokePaint.setPathEffect(new DashPathEffect(new float[] {20.0f, 7.5f}, 0.0f));
+
         this.alarms = Alarm.getAll(this.dbHelper);
-        
-        this.gestureDetector = new GestureDetector(new AlarmOnGestureListener(this));
         
         populate();
     }
     
     private Drawable dragDrawable = null;
-
+    private boolean currentlyDraggingCircle = false;
+    
     @Override
     public boolean onTouchEvent(MotionEvent event, MapView mapView)
     {
-        boolean handled = this.gestureDetector.onTouchEvent(event);
-        if (this.longPress != null)
+    	boolean handled = false;
+    	AlarmItem focusItem = getFocus();
+    	// Need to do actual drawable hit detection here, but hitTest doesn't
+    	// work as I'd expect, so do a distance test.
+    	if (focusItem != null
+    		&& event.getAction() == MotionEvent.ACTION_DOWN
+			&& distance(mapView, event, focusItem) < 10)
+    	{
+  			this.dragDrawable = boundCenterBottom(this.wakeum.getResources().getDrawable(R.drawable.pin_grey));
+    	}
+    	else if (focusItem != null
+    		&& event.getAction() == MotionEvent.ACTION_DOWN
+			&& distance(mapView, event, focusItem) < currCircleRadius + strokeWidth
+			&& distance(mapView, event, focusItem) > currCircleRadius - strokeWidth)
+    	{
+    		currentlyDraggingCircle = true;
+    		handled = true;
+    	}
+    	if (event.getAction() == MotionEvent.ACTION_MOVE && this.dragDrawable != null)
         {
-            if (this.dragDrawable == null)
-            {
-                for (int i = 0; i < this.alarms.length; i++)
-                {
-                    //Point point = mapView.getProjection().toPixels(getItem(i).getPoint(), null);
-                    //float distance = (float)Math.sqrt(square(event.getX() - point.x) + square(event.getY() - point.y)); 
-                    this.dragDrawable = boundCenterBottom(this.wakeum.getResources().getDrawable(R.drawable.pin));
-                    break;
-                    /*
-                    if (distance < 20)
-                    {
-                        Log.e(Wakeum.TAG, "here we go!");
-                        {
-                            dragDrawable = boundCenterBottom(wakeum.getResources().getDrawable(R.drawable.pin));                            
-                        }
-                    }
-                    else
-                    {
-                        Log.e(Wakeum.TAG, "nope");
-                    }8
-                    */
-                }
-            }
-            if (event.getAction() == MotionEvent.ACTION_MOVE)
-            {
-                //Log.e(Wakeum.TAG, "moving!");
-                //Log.e(Wakeum.TAG, "" + event.getHistorySize());
-                //dragDrawable.getBounds().offset((int)(event.getX() - event.getHistoricalX(2)), (int)(event.getY() - event.getHistoricalY(2)));
-                Rect bnds = this.dragDrawable.copyBounds();
-                bnds.offsetTo(((int)event.getX()) - this.dragDrawable.getIntrinsicWidth() / 2, ((int)event.getY()) - this.dragDrawable.getIntrinsicHeight());
-                this.dragDrawable.setBounds(bnds);
-                //Log.e(Wakeum.TAG, (int)event.getX() + " - " +  (int)event.getY());
-                //Log.e(Wakeum.TAG, "" + dragDrawable.getBounds());
-                mapView.postInvalidate();
-                handled = true;
-            }
+    		Rect bounds = this.dragDrawable.copyBounds();
+            bounds.offsetTo(((int)event.getX()) - this.dragDrawable.getIntrinsicWidth() / 2, ((int)event.getY()) - this.dragDrawable.getIntrinsicHeight());
+            // Leave room for a finger.
+            bounds.offset(0, FINGER_Y_OFFSET);
+            this.dragDrawable.setBounds(bounds);
+            mapView.postInvalidate();
             handled = true;
         }
+    	else if (event.getAction() == MotionEvent.ACTION_MOVE && currentlyDraggingCircle)
+    	{
+    		currCircleRadius = distance(mapView, event, focusItem);
+    		handled = true;
+    	}
         if (event.getAction() == MotionEvent.ACTION_UP)
         {
-            this.longPress = null;
-            this.dragDrawable = null;
+            if (this.dragDrawable != null)
+            {
+            	GeoPoint newGeoPoint = mapView.getProjection().fromPixels((int)event.getX(), (int)event.getY() + FINGER_Y_OFFSET);
+            	moveItemTo(focusItem, newGeoPoint);
+            	this.dragDrawable = null;
+            	// Keep our item from losing focus.
+            	handled = true;
+            }
+            if (this.currentlyDraggingCircle)
+            {
+            	this.currentlyDraggingCircle = false;
+            	handled = true;
+            }
         }
         return handled;
     }
     
-    /*
-    private float square(float real)
+    private float distance(MapView mapView, MotionEvent event, AlarmItem focusItem)
     {
-        return real * real;
+    	return distance(event.getX(), event.getY(), mapView.getProjection().toPixels(focusItem.getPoint(), null));
+	}
+
+    private float distance(float x, float y, Point point)
+    {
+    	return (float)Math.sqrt(square(x - point.x) + square(y - point.y));
     }
-    */
     
-    @Override
-    protected OverlayItem createItem(int i)
+    private float square(float x)
+    {
+    	return x * x;
+    }
+    
+    private void moveItemTo(AlarmItem item, GeoPoint geoPoint)
+    {
+    	Alarm alarm = Alarm.findAlarm(dbHelper, item.id);
+    	alarm.moveTo(dbHelper, geoPoint);
+    	this.alarms = Alarm.getAll(dbHelper);
+    	populate();
+    	AlarmItem newItem = null;
+    	for (int i = 0; i < size(); i++)
+    	{
+    		if (getItem(i).id == item.id)
+    		{
+    			Assert.assertNull(newItem);
+    			newItem = getItem(i);
+    		}
+    	}
+    	Assert.assertNotNull(newItem);
+    	this.setFocus(newItem);
+    }
+    
+	@Override
+    protected AlarmItem createItem(int i)
     {
         return this.alarms[i].toOverlayItem();
     }
@@ -140,33 +175,23 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
     @Override
     public void draw(Canvas canvas, MapView mapView, boolean shadow)
     {
-        OverlayItem item = getFocus();
+        AlarmItem item = getFocus();
         if (item != null)
         {
             Projection projection = mapView.getProjection();
             GeoPoint geoPoint = item.getPoint();
             Point point = projection.toPixels(geoPoint, null);
             
-            final int CIRCLE_RADIUS = 50;
-            
-            drawCircle(canvas, this.fillPaint, point, CIRCLE_RADIUS);
-            drawCircle(canvas, this.strokePaint, point, CIRCLE_RADIUS);
-            drawCircle(canvas, this.strokePaint, point, 3);
-            
-            int intrinsicWidth = this.upppMarker.getIntrinsicWidth();
-            int intrinsicHeight = this.upppMarker.getIntrinsicHeight();
-            
-            Rect arrowMarkers = new Rect(point.x, point.y + CIRCLE_RADIUS, point.x + intrinsicWidth, point.y + CIRCLE_RADIUS + intrinsicHeight);
-            arrowMarkers.offset(-intrinsicWidth / 2, 0);
-
-            arrowMarkers.offset(0, 1);
-            this.downMarker.setBounds(arrowMarkers);
-            this.downMarker.draw(canvas);
-
-            arrowMarkers.offset(0, -(intrinsicHeight + (int)this.strokePaint.getStrokeWidth() - 1));
-            
-            this.upppMarker.setBounds(arrowMarkers);
-            this.upppMarker.draw(canvas);
+            if (!currentlyDraggingCircle)
+            {
+            	drawCircle(canvas, this.fillPaint, point, currCircleRadius);
+            	drawCircle(canvas, this.strokePaint, point, currCircleRadius);
+            	drawCircle(canvas, this.strokePaint, point, miniCircleRadius);
+            }
+            else
+            {
+            	drawCircle(canvas, this.dottedStrokePaint, point, currCircleRadius);
+            }
         }
         if (this.dragDrawable != null)
         {
@@ -176,7 +201,7 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
         super.draw(canvas, mapView, shadow);
     }
 
-    private void drawCircle(Canvas canvas, Paint paint, Point center, int radius)
+    private void drawCircle(Canvas canvas, Paint paint, Point center, float radius)
     {
         RectF circleRect = new RectF(center.x - radius, center.y - radius, center.x + radius, center.y + radius);
         canvas.drawOval(circleRect, paint);
@@ -185,7 +210,7 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
     @Override
     protected boolean onTap(int i)
     {
-        OverlayItem item = getItem(i);
+        AlarmItem item = getItem(i);
         setFocus(item);
         MapView mapView = (MapView)this.wakeum.findViewById(R.id.mapview);
         mapView.getController().animateTo(item.getPoint());
@@ -195,7 +220,7 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
                         Toast.LENGTH_SHORT).show();
         return true;
     }
-
+    
     @Override
     public int size()
     {
@@ -205,6 +230,7 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
     public void deleteAll()
     {
         this.alarms = Alarm.deleteAll(this.dbHelper);
+        super.setFocus(null);
         populate();
     }
 
@@ -243,21 +269,11 @@ class AlarmsOverlay extends ItemizedOverlay<OverlayItem>
             name = string.toString();
         }
         
-        this.alarms = Alarm.create(this.dbHelper, name, mapCenter);
+        this.alarms = Alarm.create(this.dbHelper, name, mapCenter, 99);
         Toast.makeText(
                         this.wakeum,
                         name,
                         Toast.LENGTH_SHORT).show();
         populate();
-    }
-
-    /**
-     * In drag alarm mode, the focused alarm is dragged.
-     */
-    private MotionEvent longPress = null;
-    
-    public void setLongPress(MotionEvent longPress)
-    {
-        this.longPress = longPress;        
     }
 }
