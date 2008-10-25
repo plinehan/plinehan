@@ -20,9 +20,9 @@ class Alarm
     private final String name;
     private final int latitudeE6;
     private final int longitudeE6;
-    private final int radiusMeters;
+    private final float radiusMeters;
 
-    Alarm(Long id, String name, int latitudeE6, int longitudeE6, int radiusMeters)
+    Alarm(Long id, String name, int latitudeE6, int longitudeE6, float radiusMeters)
     {
     	this.id = id;
         this.name = name;
@@ -45,7 +45,7 @@ class Alarm
                             cursor.getString(1),
                             (int)cursor.getLong(2),
                             (int)cursor.getLong(3),
-                            (int)cursor.getInt(4)));
+                            (float)cursor.getFloat(4)));
         }
 
         cursor.close();
@@ -72,6 +72,7 @@ class Alarm
         return new AlarmItem(
         				this.id.longValue(),
                         new GeoPoint(this.latitudeE6, this.longitudeE6),
+                        this.radiusMeters,
                         this.name,
                         this.name);
     }
@@ -80,7 +81,7 @@ class Alarm
     		DbHelper dbHelper,
     		String pName,
 			GeoPoint center,
-			int radiusMeters) {
+			float radiusMeters) {
 		SQLiteDatabase database = dbHelper.getWritableDatabase();
 		database
 				.execSQL(
@@ -88,7 +89,7 @@ class Alarm
 						new Object[] { pName,
 								Long.valueOf(center.getLatitudeE6()),
 								Long.valueOf(center.getLongitudeE6()),
-								Integer.valueOf(radiusMeters)});
+								Float.valueOf(radiusMeters)});
 		database.close();
 		return getAll(dbHelper);
 	}
@@ -105,6 +106,18 @@ class Alarm
 								Long.valueOf(id)});
 		database.close();
     }
+    
+    public void setRadius(DbHelper dbHelper, float radius)
+    {
+		SQLiteDatabase database = dbHelper.getWritableDatabase();
+		database
+				.execSQL(
+						"UPDATE alarms SET radiusMeters = ? where id = ?",
+						new Object[] {
+								Float.valueOf(radius),
+								Long.valueOf(id)});
+		database.close();
+    }
 
 	public static Alarm findAlarm(DbHelper dbHelper, long id) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -117,7 +130,7 @@ class Alarm
                             cursor.getString(1),
                             (int)cursor.getLong(2),
                             (int)cursor.getLong(3),
-                            (int)cursor.getInt(4));
+                            (int)cursor.getFloat(4));
 
         cursor.close();
         db.close();

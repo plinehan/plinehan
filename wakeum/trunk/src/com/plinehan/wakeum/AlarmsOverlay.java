@@ -125,6 +125,8 @@ class AlarmsOverlay extends ItemizedOverlay<AlarmItem>
             }
             if (this.currentlyDraggingCircle)
             {
+    
+            	setItemRadius(focusItem, currCircleRadius);
             	this.currentlyDraggingCircle = false;
             	handled = true;
             }
@@ -166,6 +168,25 @@ class AlarmsOverlay extends ItemizedOverlay<AlarmItem>
     	this.setFocus(newItem);
     }
     
+    private void setItemRadius(AlarmItem item, float radius)
+    {
+    	Alarm alarm = Alarm.findAlarm(dbHelper, item.id);
+    	alarm.setRadius(dbHelper, Math.round(radius));
+    	this.alarms = Alarm.getAll(dbHelper);
+    	populate();
+    	AlarmItem newItem = null;
+    	for (int i = 0; i < size(); i++)
+    	{
+    		if (getItem(i).id == item.id)
+    		{
+    			Assert.assertNull(newItem);
+    			newItem = getItem(i);
+    		}
+    	}
+    	Assert.assertNotNull(newItem);
+    	this.setFocus(newItem);
+    }
+    
 	@Override
     protected AlarmItem createItem(int i)
     {
@@ -181,9 +202,16 @@ class AlarmsOverlay extends ItemizedOverlay<AlarmItem>
             Projection projection = mapView.getProjection();
             GeoPoint geoPoint = item.getPoint();
             Point point = projection.toPixels(geoPoint, null);
-            
             if (!currentlyDraggingCircle)
             {
+            	//Uncommenting the following two lines and commenting the last will make it so 
+            	//the size of the circle stays fixed relative the earth when zooming in and out.
+            	//The only problem is that it gets recorded in screen pixels right now, so ends up as not
+            	//many meters.  Need to calculate how many meters a radius is in meters and store that, and
+            	//the projection classes offer no easy conversion back.
+            	//float pixels = projection.metersToEquatorPixels(item.radiusMeters);
+            	//currCircleRadius = pixels;
+            	currCircleRadius = item.radiusMeters;
             	drawCircle(canvas, this.fillPaint, point, currCircleRadius);
             	drawCircle(canvas, this.strokePaint, point, currCircleRadius);
             	drawCircle(canvas, this.strokePaint, point, miniCircleRadius);
@@ -269,7 +297,7 @@ class AlarmsOverlay extends ItemizedOverlay<AlarmItem>
             name = string.toString();
         }
         
-        this.alarms = Alarm.create(this.dbHelper, name, mapCenter, 99);
+        this.alarms = Alarm.create(this.dbHelper, name, mapCenter, Math.round(currCircleRadius));
         Toast.makeText(
                         this.wakeum,
                         name,

@@ -13,7 +13,7 @@ import android.util.Log;
 class DbHelper extends SQLiteOpenHelper
 {
     private static final String DATABASE_NAME = "wakeum.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     public DbHelper(Context context)
     {
@@ -23,7 +23,7 @@ class DbHelper extends SQLiteOpenHelper
     @Override
     public void onCreate(SQLiteDatabase db)
     {
-        db.execSQL("CREATE TABLE alarms (id INTEGER PRIMARY KEY, name TEXT, latitudeE6 INTEGER, longitudeE6 INTEGER, radiusMeters INTEGER);");
+        db.execSQL("CREATE TABLE alarms (id INTEGER PRIMARY KEY, name TEXT, latitudeE6 INTEGER, longitudeE6 INTEGER, radiusMeters FLOAT);");
     }
 
     @Override

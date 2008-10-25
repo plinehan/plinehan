@@ -10,7 +10,7 @@
     	android:layout_height="wrap_content" 
     	android:enabled="true"
     	android:clickable="true"
-    	android:apiKey="com.plinehan.wakeum.apikey" 
+    	android:apiKey="0YZ_KOx8KoFdp8taG8XplTJJwbPkiNiZDL-Pcww" 
     	/>
     <LinearLayout
     	android:id="@+id/mapview_zoom"
