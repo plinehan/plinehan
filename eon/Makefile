@@ -7,3 +7,6 @@ raw.tex : raw.sh
 
 %.pdf : %.eps
 	ps2pdf -dEPSCrop $<
+
+clean :
+	rm -f *.aux eon.pdf
