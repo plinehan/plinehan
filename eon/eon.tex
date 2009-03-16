@@ -9,6 +9,8 @@
 % for controling headers/footers.
 \usepackage{fancyhdr}
 
+\usepackage{graphicx}
+
 % set paper size with geometry package
 \usepackage[papersize={6in,9in},includeheadfoot]{geometry}
 \geometry{twoside}%,bindingoffset=.25in}
@@ -25,8 +27,8 @@
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}}
 
-\title{\sc Encyclopedia of Numbers}
-\author{\sc Cinco Library}
+\title{\textsc{Encyclopedia of Numbers}}
+\author{\textsc{Cinco Library}}
 \date{ }
 
 \begin{document}
@@ -34,6 +36,7 @@
 \frontmatter
 
 \maketitle
+\include{copyright}
 
 \newpage
 \cleardoublepage
