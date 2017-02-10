@@ -4,7 +4,7 @@ from google.appengine.ext.webapp import template
 
 class MainPage(webapp.RequestHandler):
   def get(self):
-    self.response.out.write(template.render('index.html', {}))
+    self.response.out.write(template.render('index.html', {}).decode())
 
 class OfCourse(webapp.RequestHandler):
   def get(self):
@@ -14,7 +14,7 @@ class OfCourse(webapp.RequestHandler):
       'next_url': '/',
       'image':    'ofcourse.jpg'
       }
-    self.response.out.write(template.render('template.html', values))
+    self.response.out.write(template.render('template.html', values).decode())
 
 class FunnyMan(webapp.RequestHandler):
   def get(self):
@@ -24,7 +24,7 @@ class FunnyMan(webapp.RequestHandler):
       'next_url': 'brown',
       'image':    'funnyman.jpg'
       }
-    self.response.out.write(template.render('template.html', values))
+    self.response.out.write(template.render('template.html', values).decode())
 
 class Brown(webapp.RequestHandler):
   def get(self):
@@ -34,7 +34,7 @@ class Brown(webapp.RequestHandler):
       'next_url': 'nurbs',
       'image':    'brown.jpg'
       }
-    self.response.out.write(template.render('template.html', values))
+    self.response.out.write(template.render('template.html', values).decode())
 
 class Nurbs(webapp.RequestHandler):
   def get(self):
@@ -44,7 +44,7 @@ class Nurbs(webapp.RequestHandler):
       'next_url': 'thenextlevel',
       'image':    'nurbs.jpg'
       }
-    self.response.out.write(template.render('template.html', values))
+    self.response.out.write(template.render('template.html', values).decode())
 
 class TheNextLevel(webapp.RequestHandler):
   def get(self):
@@ -54,7 +54,7 @@ class TheNextLevel(webapp.RequestHandler):
       'next_url': 'dog',
       'image':    'thenextlevel.jpg'
       }
-    self.response.out.write(template.render('template.html', values))
+    self.response.out.write(template.render('template.html', values).decode())
 
 class Dog(webapp.RequestHandler):
   def get(self):
@@ -64,7 +64,7 @@ class Dog(webapp.RequestHandler):
       'next_url': 'http://www.johnniemanzari.com',
       'image':    'dog.jpg'
       }
-    self.response.out.write(template.render('template.html', values))
+    self.response.out.write(template.render('template.html', values).decode())
     
 def main():
   application = webapp.WSGIApplication([('/', MainPage),
